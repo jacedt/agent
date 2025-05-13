@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的AI智能体教练</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #6366f1;
+            --accent-color: #8b5cf6;
+            --text-color: #1e293b;
+            --light-text: #64748b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            color: var(--light-text);
+            font-weight: 400;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .agent-card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .agent-image {
+            height: 160px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .agent-content {
+            padding: 1.5rem;
+        }
+
+        .agent-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-color);
+        }
+
+        .agent-description {
+            color: var(--light-text);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            min-height: 72px;
+        }
+
+        .agent-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--light-text);
+        }
+
+        .stat-item i {
+            margin-right: 0.5rem;
+            color: var(--secondary-color);
+        }
+
+        .agent-type {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background-color: #e0e7ff;
+            color: var(--primary-color);
+        }
+
+        .agent-type i {
+            margin-right: 0.25rem;
+        }
+
+        .voice-type {
+            background-color: #ede9fe;
+            color: #7c3aed;
+        }
+
+        .interactive-type {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .coming-soon {
+            position: relative;
+        }
+
+        .coming-soon::after {
+            content: "即将上线";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* 数字人客服按钮样式 */
+        .customer-service-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            display: flex;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .customer-service-btn:hover {
+            background-color: #4338ca;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+        }
+
+        .customer-service-btn i {
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            max-width: 300px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content img {
+            width: 100%;
+            max-width: 200px;
+            margin-bottom: 1rem;
+            border: 1px solid #eee;
+        }
+
+        .modal-content h3 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-content p {
+            color: var(--light-text);
+            font-size: 0.9rem;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--light-text);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1rem;
+            }
+            
+            .agents-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .customer-service-btn {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>我的AI智能体教练</h1>
+            <h2>AI应用启发创新思维，智能工具提高生产效率</h2>
+        </header>
+
+        <div class="agents-grid">
+            <!-- 高级决策委员会 -->
+            <div class="agent-card">
+                <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="高级决策委员会" class="agent-image">
+                <div class="agent-content">
+                    <h3 class="agent-title">高级决策委员会</h3>
+                    <p class="agent-description">负责公司战略方向制定、重大决策评估和资源配置优化，确保企业长期可持续发展。</p>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-heart"></i> 1.2k
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-chart-line"></i> 98%
+                        </div>
+                    </div>
+                    <span class="agent-type voice-type">
+                        <i class="fas fa-microphone"></i> 语音模式
+                    </span>
+                </div>
+            </div>
+
+            <!-- 投融资财务顾问 -->
+            <div class="agent-card">
+                <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="投融资财务顾问" class="agent-image">
+                <div class="agent-content">
+                    <h3 class="agent-title">投融资财务顾问</h3>
+                    <p class="agent-description">提供投资分析、融资策略、财务规划和风险管理服务，优化企业资本结构和财务绩效。</p>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-heart"></i> 890
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-chart-line"></i> 95%
+                        </div>
+                    </div>
+                    <span class="agent-type voice-type">
+                        <i class="fas fa-microphone"></i> 语音模式
+                    </span>
+                </div>
+            </div>
+
+            <!-- PMO项目管理委员会 -->
+            <div class="agent-card">
+                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="PMO项目管理委员会" class="agent-image">
+                <div class="agent-content">
+                    <h3 class="agent-title">PMO项目管理委员会</h3>
+                    <p class="agent-description">监督项目执行、资源分配和进度控制，确保项目按时按质完成并实现预期目标。</p>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-heart"></i> 1.5k
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-chart-line"></i> 97%
+                        </div>
+                    </div>
+                    <span class="agent-type interactive-type">
+                        <i class="fas fa-comments"></i> 信息互动模式
+                    </span>
+                </div>
+            </div>
+
+            <!-- 产品研发中心 -->
+            <div class="agent-card">
+                <img src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="产品研发中心" class="agent-image">
+                <div class="agent-content">
+                    <h3 class="agent-title">产品研发中心</h3>
+                    <p class="agent-description">负责产品规划、设计、开发和迭代优化，推动技术创新和产品竞争力提升。</p>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-heart"></i> 2.1k
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-chart-line"></i> 99%
+                        </div>
+                    </div>
+                    <span class="agent-type interactive-type">
+                        <i class="fas fa-comments"></i> 信息互动模式
+                    </span>
+                </div>
+            </div>
+
+            <!-- 营销运营中心 -->
+            <div class="agent-card">
+                <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="营销运营中心" class="agent-image">
+                <div class="agent-content">
+                    <h3 class="agent-title">营销运营中心</h3>
+                    <p class="agent-description">制定和执行营销策略，管理品牌形象，分析市场数据，提升产品市场占有率。</p>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-heart"></i> 1.8k
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-chart-line"></i> 96%
+                        </div>
+                    </div>
+                    <span class="agent-type interactive-type">
+                        <i class="fas fa-comments"></i> 信息互动模式
+                    </span>
+                </div>
+            </div>
+
+            <!-- 行政管理中心 -->
+            <div class="agent-card">
+                <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="行政管理中心" class="agent-image">
+                <div class="agent-content">
+                    <h3 class="agent-title">行政管理中心</h3>
+                    <p class="agent-description">处理日常行政事务、人力资源管理和内部协调工作，确保企业高效运转。</p>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-heart"></i> 1.1k
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-chart-line"></i> 94%
+                        </div>
+                    </div>
+                    <span class="agent-type interactive-type">
+                        <i class="fas fa-comments"></i> 信息互动模式
+                    </span>
+                </div>
+            </div>
+
+            <!-- 高级法务专家 -->
+            <div class="agent-card">
+                <img src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="高级法务专家" class="agent-image">
+                <div class="agent-content">
+                    <h3 class="agent-title">高级法务专家</h3>
+                    <p class="agent-description">提供法律咨询、合同审查和风险评估服务，保障企业合规运营和权益保护。</p>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-heart"></i> 760
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-chart-line"></i> 93%
+                        </div>
+                    </div>
+                    <span class="agent-type voice-type">
+                        <i class="fas fa-microphone"></i> 语音模式
+                    </span>
+                </div>
+            </div>
+
+            <!-- 待上架智能体 -->
+            <div class="agent-card coming-soon">
+                <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="待上架智能体" class="agent-image">
+                <div class="agent-content">
+                    <h3 class="agent-title">待上架智能体</h3>
+                    <p class="agent-description">新智能体正在测试和优化中，即将上线为您服务。</p>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-heart"></i> 0
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-chart-line"></i> 0%
+                        </div>
+                    </div>
+                    <span class="agent-type">
+                        <i class="fas fa-question-circle"></i> 敬请期待
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数字人客服按钮 -->
+    <button class="customer-service-btn" id="customerServiceBtn">
+        <i class="fas fa-robot"></i> 数字人客服
+    </button>
+
+    <!-- 微信公众号二维码弹窗 -->
+    <div class="modal" id="wechatModal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeModal">&times;</button>
+            <h3>关注我们的微信公众号</h3>
+            <url src="https://mp.weixin.qq.com/s/ke3l-5eBL8o3-wk0UCazXw" alt="项数品生智能教练微信公众号二维码">
+            <p>“7*24小时在线服务"</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.agent-card');
+            const customerServiceBtn = document.getElementById('customerServiceBtn');
+            const wechatModal = document.getElementById('wechatModal');
+            const closeModal = document.getElementById('closeModal');
+            
+            // 卡片点击事件
+            cards.forEach(card => {
+                card.addEventListener('click', function() {
+                    console.log('点击了卡片:', this.querySelector('.agent-title').textContent);
+                });
+            });
+            
+            // 打开微信公众号弹窗
+            customerServiceBtn.addEventListener('click', function() {
+                wechatModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // 防止背景滚动
+            });
+            
+            // 关闭弹窗
+            closeModal.addEventListener('click', function() {
+                wechatModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+            
+            // 点击模态框外部关闭
+            wechatModal.addEventListener('click', function(e) {
+                if (e.target === wechatModal) {
+                    wechatModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
