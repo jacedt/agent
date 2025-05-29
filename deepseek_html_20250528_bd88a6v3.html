@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>风电项目生态治理与环境管控平台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://webapi.amap.com/maps?v=2.0&key=7120ec95b044bcb8ba90c0df9926bc5d"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a1a2f, #0c2d48);
+            color: #e0f0ff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(8, 28, 50, 0.85);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 20, 60, 0.7);
+            border-bottom: 1px solid rgba(0, 153, 255, 0.3);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, #00ccff, #0066ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header h1 i {
+            font-size: 1.5rem;
+        }
+        
+        .header-info {
+            display: flex;
+            gap: 25px;
+            font-size: 0.9rem;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-item i {
+            color: #00aaff;
+        }
+        
+        .container {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            height: calc(100% - 70px);
+        }
+        
+        .left-panel, .right-panel {
+            width: 25%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .map-container {
+            flex: 1;
+            background: rgba(10, 30, 50, 0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 10, 30, 0.7);
+            border: 1px solid rgba(0, 153, 255, 0.2);
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .panel {
+            background: rgba(8, 28, 50, 0.75);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 15, 40, 0.6);
+            border: 1px solid rgba(0, 153, 255, 0.2);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 153, 255, 0.3);
+        }
+        
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4dc3ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .panel-title i {
+            font-size: 1.1rem;
+        }
+        
+        .chart-container {
+            height: 220px;
+            position: relative;
+        }
+        
+        .right-top {
+            height: 35%;
+        }
+        
+        .right-middle {
+            height: 30%;
+        }
+        
+        .right-bottom {
+            height: 35%;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .stat-card {
+            background: rgba(0, 60, 120, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid rgba(0, 153, 255, 0.2);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00ccff;
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #88ccff;
+        }
+        
+        .project-list {
+            margin-top: 15px;
+            max-height: 160px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        .project-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .project-list::-webkit-scrollbar-thumb {
+            background: rgba(0, 153, 255, 0.4);
+            border-radius: 3px;
+        }
+        
+        .project-item {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 153, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .project-item:last-child {
+            border-bottom: none;
+        }
+        
+        .project-name {
+            font-weight: 500;
+        }
+        
+        .project-type {
+            background: rgba(0, 153, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            z-index: 1000;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .wind-icon {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+        }
+        
+        .wind-icon i {
+            color: #00ccff;
+            font-size: 1.2rem;
+        }
+        
+        .footer {
+            padding: 10px 30px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #6699cc;
+            background: rgba(8, 28, 50, 0.85);
+            border-top: 1px solid rgba(0, 153, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-fan"></i> 风电项目生态治理与环境管控平台</h1>
+        <div class="header-info">
+            <div class="info-item"><i class="fas fa-map-marker-alt"></i> 新疆地区</div>
+            <div class="info-item"><i class="fas fa-calendar-alt"></i> 2024年1月 - 2025年4月</div>
+            <div class="info-item"><i class="fas fa-wind"></i> 平均风速: 8.2 m/s</div>
+            <div class="info-item"><i class="fas fa-thermometer-half"></i> 平均温度: 12.6°C</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="left-panel">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-temperature-high"></i> 温度变化趋势 (°C)</div>
+                    <div>2024.01-2025.04</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="temperatureChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-wind"></i> 风速风向统计</div>
+                    <div>2024.01-2025.04</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="windChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-smog"></i> PM2.5浓度 (μg/m³)</div>
+                    <div>2024.01-2025.04</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="pm25Chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-leaf"></i> 土壤监测数据</div>
+                    <div>2024.01-2025.04</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="soilChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <!-- <div class="wind-icon">
+                <i class="fas fa-wind"></i> 当前风速: 7.8 m/s
+            </div> -->
+            <div id="map"></div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #00ccff;"></div>
+                    <span>已运营风电场</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ffcc00;"></div>
+                    <span>在建风电场</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ff6600;"></div>
+                    <span>规划中风电场</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="panel right-top">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-seedling"></i> 植物分布统计</div>
+                    <div>单位：万株</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="plantChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="panel right-middle">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-bolt"></i> 用电量对比</div>
+                    <div>单位：万千瓦时</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="energyChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="panel right-bottom">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-hard-hat"></i> 在建电力项目</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">项目总数</div>
+                        <div class="stat-value">18</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">风电项目</div>
+                        <div class="stat-value">12</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">输电项目</div>
+                        <div class="stat-value">4</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">其他项目</div>
+                        <div class="stat-value">2</div>
+                    </div>
+                </div>
+                <div class="project-list">
+                    <div class="project-item">
+                        <div class="project-name">达坂城风电场三期</div>
+                        <div class="project-type">风电</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-name">哈密南-郑州特高压</div>
+                        <div class="project-type">输电</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-name">吐鲁番光伏风电互补</div>
+                        <div class="project-type">风电</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-name">准东新能源基地</div>
+                        <div class="project-type">风电</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-name">乌鲁木齐储能站</div>
+                        <div class="project-type">其他</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>风电项目生态治理与环境管控平台 © 2025 | 数据更新时间: 2025-04-30 15:30:45</p>
+    </div>
+
+    <script>
+        // 初始化地图
+        function initMap() {
+            // 实际使用时需替换为真实的高德地图API密钥
+            const map = new AMap.Map('map', {
+                center: [86.905, 42.548], // 新疆中部
+                zoom: 6,
+                viewMode: '3D',
+                mapStyle: 'amap://styles/darkblue'
+            });
+            
+            // 模拟风电项目位置
+            const windProjects = [
+                {name: "达坂城风电场", lnglat: [88.3, 43.5], type: "operational", investment: 5000, dailyOutput: 1500},
+                {name: "哈密东南风场", lnglat: [94.1, 42.8], type: "operational", investment: 3000, dailyOutput: 1200},
+                {name: "吐鲁番小草湖", lnglat: [89.2, 43.1], type: "operational", investment: 4500, dailyOutput: 1400},
+                {name: "阿拉山口风电", lnglat: [82.5, 45.2], type: "operational", investment: 6000, dailyOutput: 1600},
+                {name: "克拉玛依风电", lnglat: [84.9, 45.6], type: "construction", investment: 3500, dailyOutput: 1100},
+                {name: "塔城老风口", lnglat: [83.6, 46.7], type: "construction", investment: 4000, dailyOutput: 1300},
+                {name: "喀什疏附风电", lnglat: [75.9, 39.4], type: "construction", investment: 2500, dailyOutput: 900},
+                {name: "和田洛浦风电", lnglat: [80.2, 37.1], type: "planned", investment: 2000, dailyOutput: 800},
+                {name: "巴州罗布泊", lnglat: [90.9, 40.5], type: "planned", investment: 3000, dailyOutput: 1000}
+            ];
+            
+            // 添加标记
+            windProjects.forEach(project => {
+                let color = "#00ccff";
+                if (project.type === "construction") color = "#ffcc00";
+                if (project.type === "planned") color = "#ff6600";
+                
+                const marker = new AMap.Marker({
+                    position: project.lnglat,
+                    content: `<div style="background: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>`,
+                    offset: new AMap.Pixel(-6, -6)
+                });
+                
+                marker.on('click', () => {
+                    // 弹出标签面板
+                    const infoContent = `
+                        <div style="background: rgba(0, 102, 204, 0.7); color: white; padding: 10px; border-radius: 5px;">
+                            <strong>风电项目: ${project.name}</strong><br>
+                            状态: ${getStatusText(project.type)}<br>
+                            投资金额: ${project.investment} 万元<br>
+                            日均发电量: ${project.dailyOutput} kWh
+                        </div>
+                    `;
+                    const infoWindow = new AMap.InfoWindow({
+                        content: infoContent,
+                        offset: new AMap.Pixel(0, -30)
+                    });
+                    infoWindow.open(map, project.lnglat);
+                });
+                
+                map.add(marker);
+            });
+        }
+        
+        function getStatusText(type) {
+            if (type === "operational") return "已运营";
+            if (type === "construction") return "在建中";
+            return "规划中";
+        }
+        
+        // 初始化图表
+        function initCharts() {
+            // 温度图表
+            const tempCtx = document.getElementById('temperatureChart').getContext('2d');
+            new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月', '1月', '2月', '3月', '4月'],
+                    datasets: [{
+                        label: '平均温度 (°C)',
+                        data: [-10, -8, 2, 12, 18, 24, 27, 25, 19, 10, 0, -8, -9, -7, 3, 14],
+                        borderColor: '#ff6666',
+                        backgroundColor: 'rgba(255, 102, 102, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: 'rgba(100, 150, 200, 0.1)' },
+                            ticks: { color: '#88ccff' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#88ccff' }
+                        }
+                    }
+                }
+            });
+            
+            // 风速风向图表
+            const windCtx = document.getElementById('windChart').getContext('2d');
+            new Chart(windCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
+                    datasets: [{
+                        label: '风向频率 (%)',
+                        data: [12, 8, 5, 10, 15, 20, 18, 12],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)', // N
+                            'rgba(54, 162, 235, 0.7)', // NE
+                            'rgba(255, 206, 86, 0.7)', // E
+                            'rgba(75, 192, 192, 0.7)', // SE
+                            'rgba(153, 102, 255, 0.7)', // S
+                            'rgba(255, 159, 64, 0.7)', // SW
+                            'rgba(201, 203, 207, 0.7)', // W
+                            'rgba(255, 99, 132, 0.7)'  // NW
+                        ],
+                        borderColor: '#00ccff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(100, 150, 200, 0.1)' },
+                            ticks: { color: '#88ccff' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#88ccff' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#88ccff', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+            
+            // PM2.5图表
+            const pm25Ctx = document.getElementById('pm25Chart').getContext('2d');
+            new Chart(pm25Ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月', '1月', '2月', '3月', '4月'],
+                    datasets: [{
+                        label: 'PM2.5 (μg/m³)',
+                        data: [85, 78, 65, 48, 35, 28, 25, 27, 32, 45, 68, 82, 80, 76, 60, 42],
+                        borderColor: '#66ff99',
+                        backgroundColor: 'rgba(102, 255, 153, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(100, 150, 200, 0.1)' },
+                            ticks: { color: '#88ccff' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#88ccff' }
+                        }
+                    }
+                }
+            });
+            
+            // 植物分布图表
+            const plantCtx = document.getElementById('plantChart').getContext('2d');
+            new Chart(plantCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['胡杨', '梭梭', '红柳', '沙枣', '骆驼刺'],
+                    datasets: [{
+                        data: [24, 18, 15, 12, 8],
+                        backgroundColor: [
+                            'rgba(255, 153, 0, 0.8)',
+                            'rgba(0, 204, 102, 0.8)',
+                            'rgba(102, 153, 255, 0.8)',
+                            'rgba(255, 102, 153, 0.8)',
+                            'rgba(153, 102, 255, 0.8)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#88ccff', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+            
+            // 用电量图表
+            const energyCtx = document.getElementById('energyChart').getContext('2d');
+            new Chart(energyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月', '1月', '2月', '3月', '4月'],
+                    datasets: [
+                        {
+                            label: '白天用电 (8:00-20:00)',
+                            data: [120, 115, 110, 105, 100, 115, 130, 140, 125, 115, 110, 120, 118, 112, 108, 102],
+                            backgroundColor: 'rgba(0, 204, 255, 0.7)'
+                        },
+                        {
+                            label: '夜间用电 (21:00-7:00)',
+                            data: [80, 78, 75, 70, 65, 70, 85, 90, 80, 75, 72, 78, 76, 74, 70, 68],
+                            backgroundColor: 'rgba(102, 153, 255, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(100, 150, 200, 0.1)' },
+                            ticks: { color: '#88ccff' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { 
+                                color: '#88ccff',
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 8
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#88ccff', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+            
+            // 土壤监测数据
+            const soilCtx = document.getElementById('soilChart').getContext('2d');
+            new Chart(soilCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['钙', '硫', '氮', '磷', '钾', '钠'],
+                    datasets: [{
+                        label: '元素含量 (mg/kg)',
+                        data: [120, 30, 45, 20, 60, 15], // 示例数据
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)', // 钙
+                            'rgba(54, 162, 235, 0.7)', // 硫
+                            'rgba(255, 206, 86, 0.7)', // 氮
+                            'rgba(75, 192, 192, 0.7)', // 磷
+                            'rgba(153, 102, 255, 0.7)', // 钾
+                            'rgba(255, 159, 64, 0.7)'  // 钠
+                        ],
+                        borderColor: '#00ccff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(100, 150, 200, 0.1)' },
+                            ticks: { color: '#88ccff' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#88ccff' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#88ccff', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 页面加载完成后初始化
+        window.onload = function() {
+            initMap();
+            initCharts();
+        };
+    </script>
+</body>
+</html>
